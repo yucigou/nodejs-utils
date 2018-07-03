@@ -1,0 +1,19 @@
+{
+  "name": "hello-npm-cli",
+  "version": "1.0.0",
+  "description": "A NodeJS command line package",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "node.js",
+    "npm",
+    "cli"
+  ],
+  "author": "Yuci Gou",
+  "license": "ISC",
+  "bin": {
+    "say-hello": "./cli.js"
+  }
+}
