@@ -1,5 +1,5 @@
-const axios = require('axios')
-const fs = require('fs')
+const crawler = require('./modules/crawler')
+const writer = require('./modules/writer')
 
 // Grab all given command line arguments after the third
 const [, , ...args] = process.argv
@@ -11,11 +11,9 @@ if (args.length < 2) {
 const baseUrl = 'https://hypothes.is/groups/NMb8iAjd/europe-pmc'
 const pmidFileName = args[0]
 const numberOfPages = parseInt(args[1])
-// const re = /(europepmc.org\/articles\/PMC\d+)/ig;
-const re = /(europepmc.org\/abstract\/MED\/\d+)/ig;
 const urls = []
 
-fs.writeFileSync(pmidFileName, '')
+writer.clearFile(pmidFileName)
 console.log(pmidFileName + ' cleared')
 
 urls.push(baseUrl)
@@ -25,74 +23,9 @@ for (let i = 2; i <= numberOfPages; i++) {
 }
 
 // console.log(urls)
-console.log(`Number of urls: ${urls.length}`)
-
-const writeToFile = pmidSet => {
-	let pmidList = Array.from(pmidSet).reduce((a, b) => a + b + '\n', '');
-	console.log('Write to file...: ', pmidSet.size)
-	fs.writeFileSync(pmidFileName, pmidList);
-}
-
-const crawl = urls => {
-	var obj = new Promise(async (resolve, reject) => {
-		const pmidSet = new Set()
-		for (let i = 0; i < urls.length; i++) {
-			let url = urls[i];
-			console.log('Handle URL: ', url)
-			let response = await axios({
-				url
-			})
-
-			let m
-			do {
-				m = re.exec(response.data);
-				if (m) {
-					pmidSet.add(m[1])
-				}
-			} while (m);
-
-			if (i === urls.length - 1) {
-				console.log("To be resolved")
-				resolve(pmidSet)
-			} else {
-				console.log(`Go deal with next URL. Count ${pmidSet.size}`)
-			}
-		}
-	})
-	return obj
-}
-
-/*
- * Just reference
- * The drawback is that all HTTP requests are sent in parallel
- */
-const crawl_ = urls => {
-	var obj = new Promise(async (resolve, reject) => {
-		let responses = await Promise.all(urls.map(url => {
-			console.log('Handle URL: ', url)
-			return axios({
-				url
-			})
-		}))
-
-		let totalSet = responses.map(response => {
-			const pmidSet = new Set()
-			let m
-			do {
-				m = re.exec(response.data);
-				if (m) {
-					pmidSet.add(m[1])
-				}
-			} while (m);
-			return pmidSet
-		}).reduce((a, b) => new Set([...a, ...b]), new Set())
-
-		resolve(totalSet)
-	})
-	return obj
-}
+console.log(`Number of urls: ${urls.length}`);
 
 (async () => {
-	let pmidSet = await crawl(urls)
-	writeToFile(pmidSet)
+	let pmidSet = await crawler.crawl(urls)
+	writer.writeToFile(pmidFileName, pmidSet)
 })();
