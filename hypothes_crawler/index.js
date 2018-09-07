@@ -2,7 +2,7 @@ const axios = require('axios')
 const fs = require('fs')
 
 // Grab all given command line arguments after the third
-const [,, ...args] = process.argv
+const [, , ...args] = process.argv
 if (args.length < 2) {
 	console.log(`Usage: node index.js <output-file-name> <page-number>\nExample: node index.js /tmp/pmids.txt 39`)
 	return;
@@ -33,70 +33,36 @@ const writeToFile = pmidSet => {
 	fs.writeFileSync(pmidFileName, pmidList);
 }
 
-const crawl_ = urls => {
-	var obj = new Promise((resolve, reject) => {
+const crawl = urls => {
+	var obj = new Promise(async (resolve, reject) => {
 		const pmidSet = new Set()
-		let count = 0;
-		urls.forEach(async (url, index) => {
-			console.log(`Requesting URL: ${url}`)
-			let response;
-			try {
-				response = await axios({url})
-			} catch (error) {
-				count++
-				console.log(`Error with URL: ${url} (${count}, page ${index}), ${error}`)
-				return;
-			}
-			count++
-			console.log(`Done with URL: ${url} (${count}, page ${index})`)
+		for (let i = 0; i < urls.length; i++) {
+			let url = urls[i];
+			console.log('Handle URL: ', url)
+			let response = await axios({
+				url
+			})
 
 			let m
 			do {
-			    m = re.exec(response.data);
-			    if (m) {
-			        pmidSet.add(m[1])
-			    }
+				m = re.exec(response.data);
+				if (m) {
+					pmidSet.add(m[1])
+				}
 			} while (m);
 
-			if (count >= urls.length) {
-				console.log(`${count} pages done. Resolving promise.`)
-				resolve(pmidSet)				
+			if (i === urls.length - 1) {
+				console.log("To be resolved")
+				resolve(pmidSet)
+			} else {
+				console.log(`Go deal with next URL. Count ${pmidSet.size}`)
 			}
-		})
+		}
 	})
 	return obj
 }
 
-const crawl = urls => {
-	var obj = new Promise((resolve, reject) => {
-		(async ()=>{		
-			const pmidSet = new Set()
-			for (let i = 0; i < urls.length; i++) {
-				let url = urls[i];
-				console.log('Handle URL: ', url)
-				let response = await axios({url})
-				
-				let m
-				do {
-				    m = re.exec(response.data);
-				    if (m) {
-				        pmidSet.add(m[1])
-				    }
-				} while (m);
-				
-				if (i === urls.length - 1) {
-					console.log("To be resolved")
-					resolve(pmidSet)			
-				} else {
-					console.log(`Go deal with next URL. Count ${pmidSet.size}`)
-				}
-			}
-		})();
-	})
-	return obj
-}
-
-(async ()=>{
+(async () => {
 	let pmidSet = await crawl(urls)
-	writeToFile(pmidSet)	
+	writeToFile(pmidSet)
 })();
