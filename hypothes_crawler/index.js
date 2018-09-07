@@ -62,6 +62,36 @@ const crawl = urls => {
 	return obj
 }
 
+/*
+ * Just reference
+ * The drawback is that all HTTP requests are sent in parallel
+ */
+const crawl_ = urls => {
+	var obj = new Promise(async (resolve, reject) => {
+		let responses = await Promise.all(urls.map(url => {
+			console.log('Handle URL: ', url)
+			return axios({
+				url
+			})
+		}))
+
+		let totalSet = responses.map(response => {
+			const pmidSet = new Set()
+			let m
+			do {
+				m = re.exec(response.data);
+				if (m) {
+					pmidSet.add(m[1])
+				}
+			} while (m);
+			return pmidSet
+		}).reduce((a, b) => new Set([...a, ...b]), new Set())
+
+		resolve(totalSet)
+	})
+	return obj
+}
+
 (async () => {
 	let pmidSet = await crawl(urls)
 	writeToFile(pmidSet)
