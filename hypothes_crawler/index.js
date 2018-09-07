@@ -1,13 +1,21 @@
 const axios = require('axios')
 const fs = require('fs')
 
+// Grab all given command line arguments after the third
+const [,, ...args] = process.argv
+if (args.length < 2) {
+	console.log(`Usage: node index.js <output-file-name> <page-number>\nExample: node index.js /tmp/pmids.txt 39`)
+	return;
+}
+
 const baseUrl = 'https://hypothes.is/groups/NMb8iAjd/europe-pmc'
-const numberOfPages = 39
-const pmidFileName = 'pmids.txt'
-const re = /(europepmc.org\/abstract\/MED\/\d+)/g;
+const pmidFileName = args[0]
+const numberOfPages = parseInt(args[1])
+// const re = /(europepmc.org\/articles\/PMC\d+)/ig;
+const re = /(europepmc.org\/abstract\/MED\/\d+)/ig;
 const urls = []
 
-fs.truncateSync(pmidFileName, 0)
+fs.writeFileSync(pmidFileName, '')
 console.log(pmidFileName + ' cleared')
 
 urls.push(baseUrl)
@@ -80,7 +88,7 @@ const crawl = urls => {
 					console.log("To be resolved")
 					resolve(pmidSet)			
 				} else {
-					console.log("Go deal with next URL")
+					console.log(`Go deal with next URL. Count ${pmidSet.size}`)
 				}
 			}
 		})();
